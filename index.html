@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#ad1457"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-title" content="Meal Planner"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="icon.png"/>
+  <title>💕 Meal Planner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+    :root{
+      --rose:#e91e8c;--deep:#ad1457;--blush:#fce4ec;--petal:#f8bbd0;
+      --lilac:#fce4f5;--cream:#fff5f9;--text:#3b0a2a;--muted:#a0527a;
+      --white:#fff;--shadow:0 4px 24px rgba(233,30,140,.13);--radius:16px;
+    }
+    html,body{min-height:100%;background:var(--cream);font-family:'Nunito',sans-serif;color:var(--text);}
+
+    /* ── DESKTOP SHELL ── */
+    .shell{display:flex;min-height:100vh;}
+
+    /* Sidebar (desktop only) */
+    .sidebar{
+      display:none;width:240px;flex-shrink:0;
+      background:linear-gradient(160deg,var(--deep) 0%,var(--rose) 100%);
+      position:fixed;top:0;left:0;bottom:0;z-index:50;
+      flex-direction:column;padding:32px 0 24px;
+    }
+    .sidebar-title{font-family:'Nunito',sans-serif;font-size:22px;font-weight:900;color:#fff;padding:0 24px 32px;line-height:1.3;}
+    .sidebar-title span{display:block;font-size:14px;font-weight:400;font-style:italic;opacity:.7;margin-top:2px;}
+    .sidebar-nav{flex:1;}
+    .sidebar-btn{display:flex;align-items:center;gap:12px;width:100%;padding:14px 24px;border:none;background:none;color:rgba(255,255,255,.75);font-family:'Nunito',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s;}
+    .sidebar-btn:hover{background:rgba(255,255,255,.1);color:#fff;}
+    .sidebar-btn.active{background:rgba(255,255,255,.2);color:#fff;border-right:3px solid #fff;}
+    .sidebar-btn .s-icon{font-size:20px;width:26px;text-align:center;}
+
+    /* Main content area */
+    .main{flex:1;display:flex;flex-direction:column;}
+
+    /* Mobile header */
+    .mob-header{
+      background:linear-gradient(135deg,var(--deep) 0%,var(--rose) 60%,#f06292 100%);
+      padding:22px 20px 18px;text-align:center;
+      position:sticky;top:0;z-index:100;
+      box-shadow:0 2px 20px rgba(173,20,87,.3);
+    }
+    .mob-header-title{font-family:'Nunito',sans-serif;font-size:24px;font-weight:900;color:#fff;}
+    .mob-header-title span{opacity:.7;font-weight:400;font-style:italic;}
+
+    /* Mobile bottom nav */
+    .mob-nav{
+      display:flex;background:#fff;
+      border-top:2px solid var(--petal);
+      position:fixed;bottom:0;left:0;right:0;z-index:99;
+    }
+    .mob-nav-btn{flex:1;padding:10px 4px;border:none;background:none;font-family:'Nunito',sans-serif;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;}
+    .mob-nav-btn .ni{font-size:20px;}
+    .mob-nav-btn.active{color:var(--rose);border-top:3px solid var(--rose);margin-top:-2px;}
+
+    /* Content */
+    .content{max-width:900px;width:100%;margin:0 auto;padding:24px 16px 100px;}
+
+    /* Desktop layout: planner + sidebar panel side by side */
+    .desk-two-col{display:flex;gap:24px;align-items:flex-start;}
+    .desk-main-col{flex:1;min-width:0;}
+    .desk-side-panel{width:300px;flex-shrink:0;position:sticky;top:24px;}
+
+    /* Cards */
+    .card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden;}
+    .section-title{font-family:'Nunito',sans-serif;font-size:22px;font-weight:700;color:var(--deep);margin-bottom:4px;}
+    .section-sub{font-size:13px;color:var(--muted);margin-bottom:16px;}
+
+    /* Action buttons */
+    .big-btn{width:100%;padding:15px;background:linear-gradient(135deg,var(--deep),var(--rose));border:none;border-radius:var(--radius);color:#fff;font-family:'Nunito',sans-serif;font-size:17px;font-weight:700;cursor:pointer;box-shadow:0 4px 18px rgba(233,30,140,.3);display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;transition:opacity .2s;}
+    .big-btn:hover{opacity:.9;}
+    .btn-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+    .sm-btn{flex:1;min-width:120px;padding:11px 8px;border:none;border-radius:12px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .2s;}
+    .sm-btn:hover{opacity:.85;}
+    .btn-rose{background:linear-gradient(135deg,#ad1457,#e91e8c);color:#fff;}
+    .btn-purple{background:linear-gradient(135deg,#6a1b9a,#ab47bc);color:#fff;}
+    .btn-outline{background:#fff;color:var(--rose);border:2px solid var(--petal);}
+
+    /* Day card */
+    .day-header{background:linear-gradient(90deg,var(--deep),var(--rose));padding:10px 16px;color:#fff;font-family:'Nunito',sans-serif;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:space-between;}
+    .day-rand-btn{background:rgba(255,255,255,.25);border:none;border-radius:20px;color:#fff;padding:4px 12px;font-size:11px;font-weight:600;font-family:'Nunito',sans-serif;cursor:pointer;}
+    .slot-row{display:flex;align-items:center;padding:10px 14px;gap:8px;border-bottom:1px solid var(--blush);}
+    .slot-row:last-child{border-bottom:none;}
+    .slot-row.lo-row{background:#fffde7;}
+    .slot-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;min-width:58px;}
+    .slot-emoji{font-size:17px;min-width:22px;text-align:center;}
+    .slot-info{flex:1;min-width:0;}
+    .slot-name{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .slot-name.empty{color:var(--muted);font-style:italic;font-weight:400;}
+    .slot-badges{display:flex;gap:4px;margin-top:2px;flex-wrap:wrap;}
+    .badge-fav{font-size:11px;}
+    .badge-lazy{background:#f3e5f5;color:#6a1b9a;font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px;}
+    .badge-lo{background:#fff9c4;color:#f57f17;font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px;}
+    .slot-actions{display:flex;gap:4px;align-items:center;flex-shrink:0;}
+    .slot-pick-btn{background:var(--blush);border:none;border-radius:10px;padding:5px 10px;font-size:11px;font-weight:700;color:var(--rose);cursor:pointer;font-family:'Nunito',sans-serif;white-space:nowrap;}
+    .slot-icon-btn{background:none;border:none;cursor:pointer;font-size:15px;padding:3px;border-radius:6px;}
+    .lo-btn{background:#fff9c4;border:1px solid #ffe082;border-radius:10px;padding:4px 7px;font-size:13px;cursor:pointer;}
+    .lo-btn.on{background:#ffe082;}
+
+    /* Favourites quick panel */
+    .fav-panel{}
+    .fav-panel-title{font-size:13px;font-weight:700;color:var(--deep);padding:12px 14px 8px;border-bottom:1px solid var(--blush);}
+    .fav-item{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--blush);cursor:pointer;}
+    .fav-item:last-child{border-bottom:none;}
+    .fav-item:hover{background:var(--blush);}
+    .fav-item-name{font-size:13px;font-weight:500;flex:1;}
+    .fav-item-cat{font-size:11px;color:var(--muted);}
+    .fav-empty{padding:16px 14px;font-size:13px;color:var(--muted);font-style:italic;}
+
+    /* Shopping */
+    .progress-wrap{background:var(--blush);border-radius:12px;padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;gap:12px;}
+    .progress-bar{flex:1;height:6px;background:var(--petal);border-radius:3px;overflow:hidden;}
+    .progress-fill{height:100%;background:var(--rose);border-radius:3px;transition:width .3s;}
+    .progress-txt{font-size:12px;font-weight:700;color:var(--deep);white-space:nowrap;}
+    .copy-btn{width:100%;padding:12px;background:#fff;border:2px solid var(--petal);border-radius:12px;color:var(--rose);font-weight:700;font-size:14px;font-family:'Nunito',sans-serif;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;}
+    .copy-btn.copied{background:var(--blush);border-color:var(--rose);}
+    .aisle-header{padding:10px 14px;display:flex;align-items:center;gap:8px;}
+    .aisle-emoji{font-size:17px;}
+    .aisle-label{font-size:13px;font-weight:700;color:var(--text);flex:1;}
+    .aisle-count{font-size:11px;font-weight:600;color:var(--muted);background:rgba(255,255,255,.65);padding:2px 8px;border-radius:20px;}
+    .shop-item{display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--blush);cursor:pointer;}
+    .shop-item:last-child{border-bottom:none;}
+    .shop-item.ticked{opacity:.4;}
+    .checkbox{width:22px;height:22px;border-radius:50%;border:2px solid var(--petal);display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#fff;transition:all .2s;}
+    .shop-item.ticked .checkbox{background:var(--rose);border-color:var(--rose);}
+    .shop-name{flex:1;font-size:14px;font-weight:500;}
+    .shop-meal{font-size:11px;color:var(--muted);}
+    .shop-empty{text-align:center;padding:48px 20px;color:var(--muted);font-size:14px;font-style:italic;}
+    .clear-btn{width:100%;padding:12px;background:none;border:2px solid var(--petal);border-radius:12px;color:var(--muted);font-weight:600;font-size:13px;font-family:'Nunito',sans-serif;cursor:pointer;margin-top:10px;}
+
+    /* Meals library */
+    .lib-filters{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+    .lib-filter{background:var(--blush);color:var(--rose);border:none;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Nunito',sans-serif;}
+    .lib-filter.on{background:var(--rose);color:#fff;}
+    .meal-card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:10px;overflow:hidden;}
+    .meal-card-head{padding:13px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;}
+    .meal-emoji{font-size:22px;}
+    .meal-name{font-size:15px;font-weight:600;color:var(--text);flex:1;}
+    .meal-badges{display:flex;gap:5px;align-items:center;flex-wrap:wrap;}
+    .meal-cat{background:var(--blush);color:var(--rose);font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;}
+    .chevron{color:var(--muted);font-size:13px;transition:transform .2s;}
+    .chevron.open{transform:rotate(180deg);}
+    .meal-card-body{padding:12px 14px 14px;border-top:1px solid var(--blush);}
+    .tag-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+    .tag-btn{padding:7px 14px;border-radius:20px;border:2px solid var(--petal);background:#fff;font-family:'Nunito',sans-serif;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;}
+    .tag-btn.fav-on{background:#fff8e1;border-color:#ffd54f;color:#e65100;}
+    .tag-btn.lazy-on{background:#f3e5f5;border-color:#ce93d8;color:#6a1b9a;}
+    .chip-list{display:flex;flex-wrap:wrap;gap:6px;}
+    .chip{background:var(--lilac);color:var(--deep);font-size:12px;padding:4px 10px;border-radius:20px;}
+    .del-btn{background:none;border:none;color:#ef9a9a;font-size:17px;cursor:pointer;padding:4px;}
+    .add-meal-btn{width:100%;padding:14px;background:#fff;border:2px dashed var(--petal);border-radius:var(--radius);color:var(--rose);font-family:'Nunito',sans-serif;font-size:15px;font-weight:600;cursor:pointer;margin-top:4px;}
+
+    /* Categories reference */
+    .cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-top:4px;}
+    .cat-card{background:#fff;border-radius:14px;box-shadow:var(--shadow);padding:14px;text-align:center;cursor:pointer;transition:transform .15s;}
+    .cat-card:hover{transform:translateY(-2px);}
+    .cat-card-emoji{font-size:32px;display:block;margin-bottom:6px;}
+    .cat-card-name{font-size:13px;font-weight:700;color:var(--deep);}
+    .cat-card-count{font-size:11px;color:var(--muted);margin-top:2px;}
+    .cat-meal-list{margin-top:16px;}
+    .cat-meal-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#fff;border-radius:12px;margin-bottom:8px;box-shadow:0 2px 8px rgba(233,30,140,.07);}
+    .cat-meal-item-name{flex:1;font-size:14px;font-weight:500;}
+    .back-btn{background:none;border:none;color:var(--rose);font-size:14px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;display:flex;align-items:center;gap:6px;padding:0;margin-bottom:16px;}
+
+    /* Overlay / sheet */
+    .overlay{position:fixed;inset:0;background:rgba(59,10,42,.5);z-index:200;display:flex;align-items:flex-end;}
+    .sheet{background:#fff;width:100%;border-radius:24px 24px 0 0;max-height:85vh;overflow-y:auto;padding-bottom:32px;}
+    .handle{width:40px;height:4px;background:var(--petal);border-radius:2px;margin:12px auto 16px;}
+    .sheet-title{font-family:'Nunito',sans-serif;font-size:18px;font-weight:700;color:var(--deep);padding:0 16px 12px;border-bottom:1px solid var(--blush);}
+    .sheet-filters{display:flex;gap:8px;padding:10px 16px;border-bottom:1px solid var(--blush);overflow-x:auto;}
+    .sf{background:var(--blush);color:var(--rose);border:none;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:'Nunito',sans-serif;}
+    .sf.on{background:var(--rose);color:#fff;}
+    .pick-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--blush);cursor:pointer;}
+    .pick-item:hover{background:var(--blush);}
+    .pick-item:active{background:var(--blush);}
+    .pick-name{font-size:15px;font-weight:500;color:var(--text);flex:1;}
+    .pick-cat{font-size:12px;color:var(--muted);}
+    .pick-badges{display:flex;gap:4px;}
+    .sheet-clear{margin:12px 16px 0;padding:12px;background:var(--blush);border:none;border-radius:12px;width:calc(100% - 32px);color:var(--rose);font-weight:600;font-family:'Nunito',sans-serif;font-size:14px;cursor:pointer;}
+
+    /* Form */
+    .form-overlay{position:fixed;inset:0;background:rgba(59,10,42,.5);z-index:300;display:flex;align-items:flex-end;}
+    .form-sheet{background:#fff;width:100%;border-radius:24px 24px 0 0;max-height:92vh;overflow-y:auto;padding:0 16px 44px;}
+    .form-title{font-family:'Nunito',sans-serif;font-size:20px;font-weight:700;color:var(--deep);padding:20px 0 16px;}
+    .fg{margin-bottom:14px;}
+    .fl{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;display:block;}
+    .fi{width:100%;padding:12px 14px;border:2px solid var(--petal);border-radius:12px;font-family:'Nunito',sans-serif;font-size:14px;color:var(--text);outline:none;background:#fff;}
+    .fi:focus{border-color:var(--rose);}
+    .fhint{font-size:11px;color:var(--muted);margin-top:4px;}
+    .toggle-row{display:flex;gap:10px;margin-top:6px;}
+    .tog{flex:1;padding:10px;border-radius:12px;border:2px solid var(--petal);background:#fff;font-family:'Nunito',sans-serif;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;text-align:center;}
+    .tog.fav-on{background:#fff8e1;border-color:#ffd54f;color:#e65100;}
+    .tog.lazy-on{background:#f3e5f5;border-color:#ce93d8;color:#6a1b9a;}
+    .time-toggles{display:flex;gap:8px;margin-top:6px;}
+    .time-tog{flex:1;padding:9px 4px;border-radius:12px;border:2px solid var(--petal);background:#fff;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;text-align:center;}
+    .time-tog.on-breakfast{background:#fff8e1;border-color:#ffb300;color:#e65100;}
+    .time-tog.on-lunch{background:#e8f5e9;border-color:#66bb6a;color:#2e7d32;}
+    .time-tog.on-dinner{background:#ede7f6;border-color:#9575cd;color:#4527a0;}
+    .time-badge{font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px;white-space:nowrap;}
+    .tb-b{background:#fff8e1;color:#e65100;}
+    .tb-l{background:#e8f5e9;color:#2e7d32;}
+    .tb-d{background:#ede7f6;color:#4527a0;}
+    .form-actions{display:flex;gap:10px;margin-top:20px;}
+    .btn-pri{flex:1;padding:14px;background:linear-gradient(135deg,var(--deep),var(--rose));border:none;border-radius:12px;color:#fff;font-family:'Nunito',sans-serif;font-weight:700;font-size:15px;cursor:pointer;}
+    .btn-sec{flex:1;padding:14px;background:var(--blush);border:none;border-radius:12px;color:var(--rose);font-family:'Nunito',sans-serif;font-weight:700;font-size:15px;cursor:pointer;}
+
+    /* Desktop media query */
+    @media(min-width:768px){
+      .mob-header{display:none;}
+      .mob-nav{display:none;}
+      .sidebar{display:flex;}
+      .main{margin-left:240px;}
+      .content{padding:32px 32px 40px;}
+      .sheet{max-width:500px;margin:0 auto;border-radius:24px;align-self:center;}
+      .overlay{align-items:center;justify-content:center;}
+      .form-sheet{max-width:500px;margin:0 auto;border-radius:24px;align-self:center;}
+      .form-overlay{align-items:center;justify-content:center;}
+      .cat-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));}
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect} = React;
+
+const DEFAULT_MEALS = [
+  {id:1, name:"Spaghetti Bolognese", category:"Pasta",   favourite:false,lazy:false, mealTimes:["Dinner"],           notes:"", recipeUrl:"", ingredients:["Spaghetti","Minced beef","Tinned tomatoes","Onion","Garlic","Olive oil","Dried oregano"]},
+  {id:2, name:"Chicken Stir Fry",    category:"Asian",   favourite:false,lazy:false, mealTimes:["Lunch","Dinner"],   notes:"", recipeUrl:"", ingredients:["Chicken breast","Mixed veg","Soy sauce","Garlic","Ginger","Sesame oil","Rice"]},
+  {id:3, name:"Veggie Curry",        category:"Curry",   favourite:false,lazy:false, mealTimes:["Lunch","Dinner"],   notes:"", recipeUrl:"", ingredients:["Chickpeas","Tinned tomatoes","Coconut milk","Spinach","Onion","Curry powder","Basmati rice"]},
+  {id:4, name:"Beef Tacos",          category:"Mexican", favourite:false,lazy:false, mealTimes:["Lunch","Dinner"],   notes:"", recipeUrl:"", ingredients:["Minced beef","Taco shells","Cheddar","Lettuce","Tomato","Sour cream","Taco seasoning"]},
+  {id:5, name:"Salmon & Veg",        category:"Fish",    favourite:true, lazy:false, mealTimes:["Dinner"],           notes:"", recipeUrl:"", ingredients:["Salmon fillets","Broccoli","Baby potatoes","Lemon","Olive oil","Garlic"]},
+  {id:6, name:"Tomato Soup",         category:"Soup",    favourite:false,lazy:true,  mealTimes:["Lunch","Dinner"],   notes:"", recipeUrl:"", ingredients:["Tinned tomatoes","Onion","Garlic","Vegetable stock","Double cream","Basil"]},
+  {id:7, name:"Chicken Pasta Bake",  category:"Pasta",   favourite:true, lazy:false, mealTimes:["Dinner"],           notes:"", recipeUrl:"", ingredients:["Chicken breast","Penne","Cheddar","Tinned tomatoes","Onion","Garlic","Mixed herbs"]},
+  {id:8, name:"Egg Fried Rice",      category:"Asian",   favourite:false,lazy:true,  mealTimes:["Lunch","Dinner"],   notes:"", recipeUrl:"", ingredients:["Cooked rice","Eggs","Frozen peas","Soy sauce","Sesame oil","Spring onions","Garlic"]},
+  {id:9, name:"Jacket Potato",       category:"Simple",  favourite:false,lazy:true,  mealTimes:["Lunch","Dinner"],   notes:"", recipeUrl:"", ingredients:["Large potatoes","Cheddar","Baked beans","Butter","Sour cream"]},
+  {id:10,name:"Homemade Pizza",      category:"Italian", favourite:true, lazy:false, mealTimes:["Dinner"],           notes:"", recipeUrl:"", ingredients:["Pizza dough","Tomato sauce","Mozzarella","Mixed toppings","Olive oil","Dried oregano"]},
+  {id:11,name:"Chicken Soup",        category:"Soup",    favourite:false,lazy:false, mealTimes:["Lunch","Dinner"],   notes:"", recipeUrl:"", ingredients:["Chicken breast","Carrots","Celery","Onion","Garlic","Chicken stock","Noodles"]},
+  {id:12,name:"Prawn Stir Fry",      category:"Asian",   favourite:false,lazy:false, mealTimes:["Dinner"],           notes:"", recipeUrl:"", ingredients:["Prawns","Noodles","Soy sauce","Garlic","Ginger","Spring onions","Sesame oil"]},
+  {id:13,name:"Mushroom Risotto",    category:"Italian", favourite:false,lazy:false, mealTimes:["Dinner"],           notes:"", recipeUrl:"", ingredients:["Arborio rice","Mushrooms","Onion","Garlic","White wine","Parmesan","Vegetable stock"]},
+  {id:14,name:"Sweet Potato Curry",  category:"Curry",   favourite:false,lazy:false, mealTimes:["Lunch","Dinner"],   notes:"", recipeUrl:"", ingredients:["Sweet potatoes","Chickpeas","Coconut milk","Tinned tomatoes","Onion","Curry paste","Basmati rice"]},
+  {id:15,name:"Fish & Chips",        category:"British", favourite:false,lazy:true,  mealTimes:["Lunch","Dinner"],   notes:"", recipeUrl:"", ingredients:["White fish fillets","Potatoes","Flour","Egg","Breadcrumbs","Peas"]},
+];
+
+const DAYS=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+const SLOTS=["Breakfast","Lunch","Dinner"];
+const CAT_EMOJI={Pasta:"🍝",Asian:"🥢",Curry:"🍛",Mexican:"🌮",Fish:"🐟",Soup:"🍲",Simple:"🥔",Italian:"🍕",British:"🍟",Other:"🍴",default:"🍽️"};
+
+const AISLES=[
+  {key:"meat",  label:"Meat & Fish",         emoji:"🥩",color:"#ffeaea",border:"#ffb3b3"},
+  {key:"veg",   label:"Fruit & Veg",          emoji:"🥦",color:"#eaffea",border:"#a8e6a8"},
+  {key:"dairy", label:"Dairy & Eggs",         emoji:"🧀",color:"#fffbe6",border:"#ffe082"},
+  {key:"bakery",label:"Bakery & Bread",       emoji:"🍞",color:"#fff3e0",border:"#ffcc80"},
+  {key:"pasta", label:"Pasta, Rice & Grains", emoji:"🍚",color:"#f3e5f5",border:"#ce93d8"},
+  {key:"tins",  label:"Tins & Jars",          emoji:"🥫",color:"#e8f5e9",border:"#a5d6a7"},
+  {key:"sauces",label:"Sauces & Condiments",  emoji:"🫙",color:"#fce4ec",border:"#f48fb1"},
+  {key:"spices",label:"Spices & Herbs",       emoji:"🌿",color:"#e0f7fa",border:"#80deea"},
+  {key:"frozen",label:"Frozen",               emoji:"❄️",color:"#e3f2fd",border:"#90caf9"},
+  {key:"other", label:"Other",                emoji:"🛒",color:"#f5f5f5",border:"#e0e0e0"},
+];
+const AKW={
+  meat:  ["chicken","beef","mince","minced","lamb","pork","bacon","sausage","steak","turkey","salmon","tuna","fish","prawn","prawns","shrimp","cod","haddock","white fish","sea bass","duck","chorizo","ham","salami","fillet","breast","thigh","leg","wing","meatball","brisket","ribs"],
+  veg:   ["onion","garlic","carrot","celery","broccoli","spinach","lettuce","tomato","potato","potatoes","sweet potato","mushroom","mushrooms","pepper","courgette","cucumber","cabbage","leek","spring onion","spring onions","lemon","lime","avocado","ginger","kale","asparagus","aubergine","beetroot","peas","green beans","pak choi","chilli","basil","coriander","parsley","rosemary","thyme","mint","mixed veg","veg","shallot","radish","turnip","parsnip","fennel"],
+  dairy: ["milk","cheese","cheddar","mozzarella","parmesan","butter","cream","double cream","sour cream","yogurt","yoghurt","egg","eggs","feta","brie","cream cheese","mascarpone","creme fraiche","halloumi","ricotta"],
+  bakery:["bread","baguette","roll","pitta","naan","tortilla","taco shell","taco shells","pizza dough","dough","breadcrumb","breadcrumbs"],
+  pasta: ["pasta","spaghetti","penne","fusilli","tagliatelle","rigatoni","rice","basmati","arborio","risotto rice","noodle","noodles","couscous","quinoa","bulgur","lentil","lentils","flour","oats","cooked rice"],
+  tins:  ["tinned","baked beans","chickpeas","kidney beans","black beans","cannellini","butter beans","mixed beans","coconut milk","vegetable stock","chicken stock","beef stock","stock","sweetcorn","anchovies","sardines","mackerel","olives","capers"],
+  sauces:["soy sauce","sesame oil","olive oil","tomato sauce","tomato puree","passata","worcestershire","hot sauce","ketchup","mustard","mayonnaise","mayo","vinegar","balsamic","oyster sauce","fish sauce","hoisin","teriyaki","curry paste","pesto","tahini","bbq sauce","sweet chilli","taco seasoning","sauce","oil"],
+  spices:["salt","pepper","cumin","coriander","turmeric","paprika","chilli powder","cayenne","cinnamon","oregano","dried oregano","mixed herbs","bay leaf","nutmeg","cardamom","curry powder","garam masala","five spice","smoked paprika","garlic powder","seasoning"],
+  frozen:["frozen","ice cream","frozen chips"],
+};
+function cat(ing){const l=ing.toLowerCase().trim();for(const[k,kws]of Object.entries(AKW))for(const kw of kws)if(l.includes(kw))return k;return"other";}
+function rnd(arr){return arr[Math.floor(Math.random()*arr.length)];}
+function smartRnd(pool,used=[]){
+  if(!pool.length)return null;
+  const favFresh=pool.filter(m=>m.favourite&&!used.includes(m.id));
+  const fresh=pool.filter(m=>!used.includes(m.id));
+  const src=favFresh.length?favFresh:fresh.length?fresh:pool;
+  return rnd(src);
+}
+function ld(k,fb){try{const v=localStorage.getItem(k);return v?JSON.parse(v):fb;}catch{return fb;}}
+function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
+
+function App(){
+  const [tab,setTab]             = useState("planner");
+  const [meals,setMeals]         = useState(()=>ld("mp_meals",DEFAULT_MEALS));
+  const [plan,setPlan]           = useState(()=>ld("mp_plan",{}));
+  const [leftovers,setLO]        = useState(()=>ld("mp_lo",{}));
+  const [checked,setChecked]     = useState(()=>ld("mp_chk",{}));
+  const [expanded,setExpanded]   = useState({});
+  const [picker,setPicker]       = useState(null);
+  const [pFilter,setPFilter]     = useState("all");
+  const [libFilter,setLibFilter] = useState("all");
+  const [selectedCat,setSelCat]  = useState(null);
+  const [showAdd,setShowAdd]     = useState(false);
+  const [nm,setNm]               = useState({name:"",category:"",ingredients:"",favourite:false,lazy:false,mealTimes:["Breakfast","Lunch","Dinner"],notes:"",recipeUrl:""});
+  const [editingMeal,setEditingMeal] = useState(null); // holds meal id being edited
+  const [copied,setCopied]       = useState(false);
+  const [deferredPrompt,setDP]   = useState(null);
+  const [showBanner,setShowBanner]= useState(true);
+
+  useEffect(()=>{sv("mp_meals",meals);},[meals]);
+  useEffect(()=>{sv("mp_plan",plan);},[plan]);
+  useEffect(()=>{sv("mp_lo",leftovers);},[leftovers]);
+  useEffect(()=>{sv("mp_chk",checked);},[checked]);
+  useEffect(()=>{
+    const h=e=>{e.preventDefault();setDP(e);};
+    window.addEventListener("beforeinstallprompt",h);
+    return()=>window.removeEventListener("beforeinstallprompt",h);
+  },[]);
+
+  const k=(d,s)=>`${d}-${s}`;
+  const getMeal=(d,s)=>meals.find(m=>m.id===plan[k(d,s)])||null;
+  const isLO=(d,s)=>getLoCount(d,s)>0;
+  const isLOFrom=(d,s)=>leftovers[k(d,s)]==="from";
+  const usedIds=()=>Object.values(plan).filter(Boolean);
+
+  // Helper: meals suitable for a slot (if no mealTimes set, treat as any)
+  const mealsForSlot=(slot,pool=meals)=>pool.filter(m=>!m.mealTimes||m.mealTimes.length===0||m.mealTimes.includes(slot));
+
+  // Randomise
+  const randAll=()=>{
+    const u={};const used=[];
+    DAYS.forEach(d=>SLOTS.forEach(s=>{const pool=mealsForSlot(s);const m=smartRnd(pool,used);if(m){u[k(d,s)]=m.id;used.push(m.id);}}));
+    setPlan(p=>({...p,...u}));setLO({});
+  };
+  const randDinners=()=>{
+    const u={};const used=usedIds();const pool=mealsForSlot("Dinner");
+    DAYS.forEach(d=>{const m=smartRnd(pool,used);if(m){u[k(d,"Dinner")]=m.id;used.push(m.id);}});
+    setPlan(p=>({...p,...u}));
+  };
+  const randDay=d=>{
+    const u={};const used=usedIds();
+    SLOTS.forEach(s=>{const pool=mealsForSlot(s);const m=smartRnd(pool,used);if(m){u[k(d,s)]=m.id;used.push(m.id);}});
+    setPlan(p=>({...p,...u}));
+  };
+  const randLazy=()=>{
+    const lazyMeals=meals.filter(m=>m.lazy);
+    if(!lazyMeals.length){alert("Tag some meals as Easy in My Meals first! 😴");return;}
+    const u={};const used=[];
+    DAYS.forEach(d=>{const pool=mealsForSlot("Dinner",lazyMeals);const m=smartRnd(pool,used);if(m){u[k(d,"Dinner")]=m.id;used.push(m.id);}});
+    setPlan(p=>({...p,...u}));
+  };
+
+  const clearSlot=(d,s)=>{
+    const count=getLoCount(d,s);
+    const targets=getRollTargets(d,s,count);
+    setPlan(p=>{const n={...p};delete n[k(d,s)];targets.forEach(t=>{if(leftovers[k(t.day,t.slot)]==="from")delete n[k(t.day,t.slot)];});return n;});
+    setLO(l=>{const n={...l};delete n[k(d,s)];targets.forEach(t=>{delete n[k(t.day,t.slot)];});return n;});
+  };
+
+  // leftovers: key = "Day-Slot" → number of days to roll forward (0 = none)
+  // "from" = this slot was auto-filled as a leftover
+
+  const getLoCount=(d,s)=>typeof leftovers[k(d,s)]==="number"?leftovers[k(d,s)]:0;
+
+  // Given a day+slot, return array of {day,slot} targets for n rollover days
+  const getRollTargets=(d,s,count)=>{
+    const targets=[];
+    let curDay=d; let curSlot=s;
+    for(let i=0;i<count;i++){
+      // next slot: Lunch→Dinner same day, Dinner→Lunch next day
+      if(curSlot==="Lunch"){ curSlot="Dinner"; }
+      else { const di=DAYS.indexOf(curDay); if(di>=DAYS.length-1)break; curDay=DAYS[di+1]; curSlot="Lunch"; }
+      targets.push({day:curDay,slot:curSlot});
+    }
+    return targets;
+  };
+
+  const cycleLeftover=(d,s)=>{
+    const ki=k(d,s);const mealId=plan[ki];
+    if(!mealId||isLOFrom(d,s))return;
+
+    const cur=getLoCount(d,s);
+
+    // Max rollovers: cap based on remaining slots
+    // Calculate max possible targets
+    const maxPossible=getRollTargets(d,s,10).length;
+    const max=Math.min(maxPossible,4);
+
+    const next=(cur+1)%(max+1); // cycle 0→1→2→...→max→0
+
+    // Clear all previously set leftover targets from this slot
+    const oldTargets=getRollTargets(d,s,cur);
+    setPlan(p=>{
+      const n={...p};
+      oldTargets.forEach(t=>{if(leftovers[k(t.day,t.slot)]==="from")delete n[k(t.day,t.slot)];});
+      return n;
+    });
+    setLO(l=>{
+      const n={...l};
+      oldTargets.forEach(t=>{delete n[k(t.day,t.slot)];});
+      delete n[ki];
+      return n;
+    });
+
+    if(next===0)return; // cleared
+
+    // Set new targets
+    const newTargets=getRollTargets(d,s,next);
+    const planUpdates={};const loUpdates={[ki]:next};
+    newTargets.forEach(t=>{planUpdates[k(t.day,t.slot)]=mealId;loUpdates[k(t.day,t.slot)]="from";});
+    setPlan(p=>({...p,...planUpdates}));
+    setLO(l=>({...l,...loUpdates}));
+  };
+
+  const pickMeal=id=>{if(picker){setPlan(p=>({...p,[k(picker.day,picker.slot)]:id}));setPicker(null);}};
+
+  // Shopping
+  const shoppingByAisle=(()=>{
+    const items={};
+    DAYS.forEach(d=>SLOTS.forEach(s=>{
+      const m=getMeal(d,s);if(!m)return;
+      m.ingredients.forEach(ing=>{
+        const n=ing.trim().toLowerCase();
+        if(!items[n])items[n]={name:ing.trim(),meals:[],aisle:cat(ing)};
+        if(!items[n].meals.includes(m.name))items[n].meals.push(m.name);
+      });
+    }));
+    const all=Object.values(items).sort((a,b)=>a.name.localeCompare(b.name));
+    const g={};AISLES.forEach(a=>{g[a.key]=[];});all.forEach(i=>{g[i.aisle].push(i);});
+    return AISLES.map(a=>({...a,items:g[a.key]})).filter(a=>a.items.length>0);
+  })();
+  const shopList=shoppingByAisle.flatMap(a=>a.items);
+  const ckCount=shopList.filter(i=>checked[i.name]).length;
+  const copyList=()=>{
+    const t=shoppingByAisle.map(a=>`${a.emoji} ${a.label}\n${a.items.map(i=>`  • ${i.name}`).join("\n")}`).join("\n\n");
+    navigator.clipboard.writeText(t).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2200);});
+  };
+
+  // Meal library helpers
+  const openEdit=meal=>{
+    setNm({name:meal.name,category:meal.category,ingredients:meal.ingredients.join(", "),favourite:meal.favourite,lazy:meal.lazy,mealTimes:meal.mealTimes||["Breakfast","Lunch","Dinner"],notes:meal.notes||"",recipeUrl:meal.recipeUrl||""});
+    setEditingMeal(meal.id);
+    setShowAdd(true);
+  };
+
+  const addMeal=()=>{
+    if(!nm.name.trim())return;
+    if(editingMeal){
+      setMeals(ms=>ms.map(m=>m.id===editingMeal?{...m,name:nm.name.trim(),category:nm.category.trim()||"Other",favourite:nm.favourite,lazy:nm.lazy,mealTimes:nm.mealTimes,notes:nm.notes.trim(),recipeUrl:nm.recipeUrl.trim(),ingredients:nm.ingredients.split(",").map(s=>s.trim()).filter(Boolean)}:m));
+      setEditingMeal(null);
+    } else {
+      const m={id:Date.now(),name:nm.name.trim(),category:nm.category.trim()||"Other",favourite:nm.favourite,lazy:nm.lazy,mealTimes:nm.mealTimes,notes:nm.notes.trim(),recipeUrl:nm.recipeUrl.trim(),ingredients:nm.ingredients.split(",").map(s=>s.trim()).filter(Boolean)};
+      setMeals(ms=>[...ms,m]);
+    }
+    setNm({name:"",category:"",ingredients:"",favourite:false,lazy:false,mealTimes:["Breakfast","Lunch","Dinner"],notes:"",recipeUrl:""});
+    setShowAdd(false);
+  };
+  const delMeal=id=>{
+    setMeals(ms=>ms.filter(m=>m.id!==id));
+    setPlan(p=>{const n={...p};Object.keys(n).forEach(kk=>{if(n[kk]===id)delete n[kk];});return n;});
+  };
+  const toggleTag=(id,tag)=>setMeals(ms=>ms.map(m=>m.id===id?{...m,[tag]:!m[tag]}:m));
+
+  // Favourites
+  const favMeals=meals.filter(m=>m.favourite);
+  const plannedCount=DAYS.reduce((a,d)=>a+SLOTS.filter(s=>plan[k(d,s)]).length,0);
+
+  // Picker pool — filtered by slot time AND tag filter
+  const pickerPool=(()=>{
+    const slotFiltered=picker?mealsForSlot(picker.slot):meals;
+    if(pFilter==="fav")return slotFiltered.filter(m=>m.favourite);
+    if(pFilter==="lazy")return slotFiltered.filter(m=>m.lazy);
+    return slotFiltered;
+  })();
+
+  // Lib filter
+  const libMeals=(()=>{
+    if(libFilter==="fav")return meals.filter(m=>m.favourite);
+    if(libFilter==="lazy")return meals.filter(m=>m.lazy);
+    return meals;
+  })();
+
+  // Categories for the reference tab
+  const categories=[...new Set(meals.map(m=>m.category))].sort();
+
+  const NAV=[
+    {id:"planner",icon:"📅",label:"Planner"},
+    {id:"shopping",icon:"🛒",label:"Shopping"},
+    {id:"meals",icon:"🍽️",label:"My Meals"},
+    {id:"categories",icon:"🏷️",label:"Categories"},
+  ];
+
+  const installApp=async()=>{if(deferredPrompt){deferredPrompt.prompt();await deferredPrompt.userChoice;setDP(null);setShowBanner(false);}};
+
+  return (
+    <div>
+      {/* Install banner */}
+      {showBanner&&deferredPrompt&&(
+        <div style={{background:"linear-gradient(135deg,#ad1457,#e91e8c)",color:"#fff",padding:"10px 16px",display:"flex",alignItems:"center",gap:10,fontSize:13,position:"sticky",top:0,zIndex:200}}>
+          <span>💕 Add to your home screen!</span>
+          <button onClick={installApp} style={{background:"#fff",color:"var(--rose)",border:"none",borderRadius:20,padding:"5px 14px",fontWeight:700,fontSize:12,cursor:"pointer"}}>Install</button>
+          <button onClick={()=>setShowBanner(false)} style={{background:"none",border:"none",color:"rgba(255,255,255,.7)",fontSize:20,cursor:"pointer",marginLeft:"auto",lineHeight:1}}>×</button>
+        </div>
+      )}
+
+      <div className="shell">
+        {/* ── SIDEBAR (desktop) ── */}
+        <div className="sidebar">
+          <div className="sidebar-title">💕 Meal Planner<span>by Stav</span></div>
+          <div className="sidebar-nav">
+            {NAV.map(t=>(
+              <button key={t.id} className={`sidebar-btn ${tab===t.id?"active":""}`} onClick={()=>setTab(t.id)}>
+                <span className="s-icon">{t.icon}</span>{t.label}
+              </button>
+            ))}
+          </div>
+          {/* Favourites quick-access */}
+          {favMeals.length>0&&(
+            <div style={{borderTop:"1px solid rgba(255,255,255,.2)",paddingTop:16,marginTop:8}}>
+              <div style={{color:"rgba(255,255,255,.6)",fontSize:11,fontWeight:700,padding:"0 24px 8px",textTransform:"uppercase",letterSpacing:".5px"}}>⭐ Favourites</div>
+              {favMeals.map(m=>(
+                <div key={m.id} style={{padding:"6px 24px",fontSize:13,color:"rgba(255,255,255,.85)",cursor:"pointer"}} onClick={()=>{setPicker(null);setTab("meals");}}>{m.name}</div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── MAIN ── */}
+        <div className="main">
+          {/* Mobile header */}
+          <div className="mob-header">
+            <div className="mob-header-title">💕 Meal Planner <span>by Stav</span></div>
+          </div>
+
+          <div className="content">
+
+            {/* ── PLANNER ── */}
+            {tab==="planner"&&(
+              <div className="desk-two-col">
+                <div className="desk-main-col">
+                  <p className="section-title">This Week</p>
+                  <p className="section-sub">{plannedCount} of {DAYS.length*SLOTS.length} meals planned</p>
+                  <button className="big-btn" onClick={randAll}>🎲 Randomise Full Week</button>
+                  <div className="btn-row">
+                    <button className="sm-btn btn-rose" onClick={randDinners}>🌙 Dinners Only</button>
+                    <button className="sm-btn btn-purple" onClick={randLazy}>😴 Feeling Lazy</button>
+                    <button className="sm-btn btn-outline" onClick={()=>{setPlan({});setLO({});}}>🗑️ Clear All</button>
+                  </div>
+                  {DAYS.map(day=>(
+                    <div key={day} className="card">
+                      <div className="day-header">
+                        <span>{day}</span>
+                        <button className="day-rand-btn" onClick={()=>randDay(day)}>🎲 Randomise</button>
+                      </div>
+                      {SLOTS.map(slot=>{
+                        const meal=getMeal(day,slot);
+                        const emoji=meal?(CAT_EMOJI[meal.category]||CAT_EMOJI.default):"·";
+                        const loFrom=isLOFrom(day,slot);
+                        return (
+                          <div key={slot} className={`slot-row ${loFrom?"lo-row":""}`}>
+                            <span className="slot-label">{slot}</span>
+                            <span className="slot-emoji">{emoji}</span>
+                            <div className="slot-info">
+                              <div className={`slot-name ${!meal?"empty":""}`}>{meal?meal.name:"Not set"}</div>
+                              <div className="slot-badges">
+                                {meal?.favourite&&<span className="badge-fav">⭐</span>}
+                                {meal?.lazy&&<span className="badge-lazy">😴 Easy</span>}
+                                {loFrom&&<span className="badge-lo">🍱 Leftovers</span>}
+                              </div>
+                            </div>
+                            <div className="slot-actions">
+                              {meal&&slot==="Dinner"&&DAYS.indexOf(day)<DAYS.length-1&&!isLOFrom(day,slot)&&(
+                                <button className={`lo-btn ${isLO(day,slot)?"on":""}`} title="Tap to roll over as leftovers (tap again for more days)" onClick={()=>cycleLeftover(day,slot)}>
+                                  🍱{getLoCount(day,slot)>0?` ×${getLoCount(day,slot)}`:""}
+                                </button>
+                              )}
+                              {meal&&slot==="Lunch"&&!isLOFrom(day,slot)&&(
+                                <button className={`lo-btn ${isLO(day,slot)?"on":""}`} title="Tap to roll over as leftovers (tap again for more days)" onClick={()=>cycleLeftover(day,slot)}>
+                                  🍱{getLoCount(day,slot)>0?` ×${getLoCount(day,slot)}`:""}
+                                </button>
+                              )}
+                              <button className="slot-pick-btn" onClick={()=>{setPFilter("all");setPicker({day,slot});}}>{meal?"Change":"+ Pick"}</button>
+                              {meal&&!loFrom&&<button className="slot-icon-btn" onClick={()=>clearSlot(day,slot)}>✕</button>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop side panel: favourites */}
+                <div className="desk-side-panel">
+                  <div className="card fav-panel">
+                    <div className="fav-panel-title">⭐ Your Favourites</div>
+                    {favMeals.length===0
+                      ? <div className="fav-empty">No favourites yet — go to My Meals and star some! ✨</div>
+                      : favMeals.map(m=>(
+                          <div key={m.id} className="fav-item" onClick={()=>{setPFilter("fav");setPicker(null);}}>
+                            <span style={{fontSize:20}}>{CAT_EMOJI[m.category]||CAT_EMOJI.default}</span>
+                            <div>
+                              <div className="fav-item-name">{m.name}</div>
+                              <div className="fav-item-cat">{m.category}{m.lazy?" · 😴 Easy":""}</div>
+                            </div>
+                          </div>
+                        ))
+                    }
+                  </div>
+                  <div className="card" style={{padding:14}}>
+                    <div style={{fontSize:13,fontWeight:700,color:"var(--deep)",marginBottom:8}}>😴 Easy Meals</div>
+                    {meals.filter(m=>m.lazy).length===0
+                      ? <div style={{fontSize:12,color:"var(--muted)",fontStyle:"italic"}}>Tag meals as Easy in My Meals.</div>
+                      : meals.filter(m=>m.lazy).map(m=>(
+                          <div key={m.id} style={{fontSize:13,padding:"5px 0",borderBottom:"1px solid var(--blush)",display:"flex",gap:8,alignItems:"center"}}>
+                            <span>{CAT_EMOJI[m.category]||CAT_EMOJI.default}</span>
+                            <span style={{flex:1}}>{m.name}</span>
+                          </div>
+                        ))
+                    }
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── SHOPPING ── */}
+            {tab==="shopping"&&(
+              <div>
+                <p className="section-title">Shopping List</p>
+                <p className="section-sub">Based on this week's plan</p>
+                {shopList.length===0
+                  ? <div className="shop-empty">No meals planned yet! 💕<br/>Head to the Planner to get started.</div>
+                  : <>
+                      <div className="progress-wrap">
+                        <div className="progress-bar"><div className="progress-fill" style={{width:`${(ckCount/shopList.length)*100}%`}}/></div>
+                        <span className="progress-txt">{ckCount}/{shopList.length} got</span>
+                      </div>
+                      <button className={`copy-btn ${copied?"copied":""}`} onClick={copyList}>{copied?"✓ Copied!":"📋 Copy shopping list"}</button>
+                      {shoppingByAisle.map(aisle=>(
+                        <div key={aisle.key} className="card" style={{marginBottom:12}}>
+                          <div className="aisle-header" style={{background:aisle.color,borderBottom:`2px solid ${aisle.border}`}}>
+                            <span className="aisle-emoji">{aisle.emoji}</span>
+                            <span className="aisle-label">{aisle.label}</span>
+                            <span className="aisle-count">{aisle.items.filter(i=>checked[i.name]).length}/{aisle.items.length}</span>
+                          </div>
+                          {aisle.items.map(item=>(
+                            <div key={item.name} className={`shop-item ${checked[item.name]?"ticked":""}`} onClick={()=>setChecked(c=>({...c,[item.name]:!c[item.name]}))}>
+                              <div className="checkbox">{checked[item.name]&&<span style={{color:"#fff",fontSize:13}}>✓</span>}</div>
+                              <div style={{flex:1}}>
+                                <div className="shop-name">{item.name}</div>
+                                <div className="shop-meal">{item.meals.join(", ")}</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                      {ckCount>0&&<button className="clear-btn" onClick={()=>setChecked(c=>{const n={...c};shopList.forEach(i=>{if(n[i.name])delete n[i.name];});return n;})}>Clear ticked ({ckCount})</button>}
+                    </>
+                }
+              </div>
+            )}
+
+            {/* ── MY MEALS ── */}
+            {tab==="meals"&&(
+              <div>
+                <p className="section-title">My Meals</p>
+                <p className="section-sub">{meals.length} meals · {favMeals.length} ⭐ · {meals.filter(m=>m.lazy).length} 😴 easy</p>
+                <div className="lib-filters">
+                  {[{id:"all",label:"All"},
+                    {id:"fav",label:"⭐ Favourites"},
+                    {id:"lazy",label:"😴 Easy"}].map(f=>(
+                    <button key={f.id} className={`lib-filter ${libFilter===f.id?"on":""}`} onClick={()=>setLibFilter(f.id)}>{f.label}</button>
+                  ))}
+                </div>
+                {libMeals.map(meal=>{
+                  const open=expanded[meal.id];
+                  return (
+                    <div key={meal.id} className="meal-card">
+                      <div className="meal-card-head" onClick={()=>setExpanded(e=>({...e,[meal.id]:!open}))}>
+                        <span className="meal-emoji">{CAT_EMOJI[meal.category]||CAT_EMOJI.default}</span>
+                        <span className="meal-name">{meal.name}</span>
+                        <div className="meal-badges">
+                          {meal.favourite&&<span style={{fontSize:15}}>⭐</span>}
+                          {meal.lazy&&<span className="badge-lazy">😴</span>}
+                          {(meal.mealTimes||[]).map(t=>(
+                            <span key={t} className={`time-badge ${t==="Breakfast"?"tb-b":t==="Lunch"?"tb-l":"tb-d"}`}>
+                              {t==="Breakfast"?"🌅":t==="Lunch"?"☀️":"🌙"}
+                            </span>
+                          ))}
+                          <span className="meal-cat">{meal.category}</span>
+                        </div>
+                        <button className="del-btn" style={{color:"#90caf9",fontSize:16}} onClick={e=>{e.stopPropagation();openEdit(meal);}}>✏️</button>
+                        <button className="del-btn" onClick={e=>{e.stopPropagation();delMeal(meal.id);}}>🗑</button>
+                        <span className={`chevron ${open?"open":""}`}>▼</span>
+                      </div>
+                      {open&&(
+                        <div className="meal-card-body">
+                          <div className="tag-row">
+                            <button className={`tag-btn ${meal.favourite?"fav-on":""}`} onClick={()=>toggleTag(meal.id,"favourite")}>
+                              {meal.favourite?"⭐ Favourited":"☆ Add to Favourites"}
+                            </button>
+                            <button className={`tag-btn ${meal.lazy?"lazy-on":""}`} onClick={()=>toggleTag(meal.id,"lazy")}>
+                              {meal.lazy?"😴 Easy — remove tag":"+ Mark as Easy"}
+                            </button>
+                          </div>
+                          <div style={{marginBottom:10}}>
+                            <div style={{fontSize:11,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:".5px",marginBottom:6}}>Suitable for</div>
+                            <div className="time-toggles">
+                              {["Breakfast","Lunch","Dinner"].map(t=>{
+                                const times=meal.mealTimes||["Breakfast","Lunch","Dinner"];
+                                const on=times.includes(t);
+                                return (
+                                  <button key={t} className={`time-tog ${on?"on-"+t.toLowerCase():""}`} onClick={()=>{
+                                    const cur=meal.mealTimes||["Breakfast","Lunch","Dinner"];
+                                    const next=on?cur.filter(x=>x!==t):[...cur,t];
+                                    if(next.length===0)return;
+                                    setMeals(ms=>ms.map(m=>m.id===meal.id?{...m,mealTimes:next}:m));
+                                  }}>
+                                    {t==="Breakfast"?"🌅":t==="Lunch"?"☀️":"🌙"} {t}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                          <div className="chip-list">
+                            {meal.ingredients.map((ing,i)=><span key={i} className="chip">{ing}</span>)}
+                          </div>
+                          {meal.notes&&(
+                            <div style={{marginTop:10,padding:"8px 12px",background:"var(--lilac)",borderRadius:10,fontSize:13,color:"var(--text)"}}>
+                              📝 {meal.notes}
+                            </div>
+                          )}
+                          {meal.recipeUrl&&(
+                            <a href={meal.recipeUrl} target="_blank" rel="noopener noreferrer"
+                              style={{marginTop:8,display:"flex",alignItems:"center",gap:8,padding:"9px 12px",background:"var(--blush)",borderRadius:10,fontSize:13,fontWeight:700,color:"var(--rose)",textDecoration:"none"}}
+                              onClick={e=>e.stopPropagation()}>
+                              {meal.recipeUrl.includes("tiktok")?"🎵":meal.recipeUrl.includes("youtube")?"▶️":"🔗"}
+                              {meal.recipeUrl.includes("tiktok")?"View TikTok Recipe":meal.recipeUrl.includes("youtube")?"Watch on YouTube":"View Recipe"}
+                              <span style={{marginLeft:"auto",fontSize:11,opacity:.6}}>↗</span>
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                <button className="add-meal-btn" onClick={()=>setShowAdd(true)}>+ Add New Meal</button>
+              </div>
+            )}
+
+            {/* ── CATEGORIES ── */}
+            {tab==="categories"&&(
+              <div>
+                {selectedCat===null?(
+                  <>
+                    <p className="section-title">Categories</p>
+                    <p className="section-sub">Browse all your meals by type</p>
+                    <div className="cat-grid">
+                      {categories.map(c=>{
+                        const count=meals.filter(m=>m.category===c).length;
+                        return (
+                          <div key={c} className="cat-card" onClick={()=>setSelCat(c)}>
+                            <span className="cat-card-emoji">{CAT_EMOJI[c]||CAT_EMOJI.default}</span>
+                            <div className="cat-card-name">{c}</div>
+                            <div className="cat-card-count">{count} meal{count!==1?"s":""}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div style={{marginTop:24}}>
+                      <p className="section-title" style={{fontSize:18}}>All Meals A–Z</p>
+                      <p className="section-sub">Every meal in your library</p>
+                      {[...meals].sort((a,b)=>a.name.localeCompare(b.name)).map(m=>(
+                        <div key={m.id} className="cat-meal-item">
+                          <span style={{fontSize:20}}>{CAT_EMOJI[m.category]||CAT_EMOJI.default}</span>
+                          <span className="cat-meal-item-name">{m.name}</span>
+                          <span className="meal-cat">{m.category}</span>
+                          {m.favourite&&<span>⭐</span>}
+                          {m.lazy&&<span className="badge-lazy">😴</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ):(
+                  <>
+                    <button className="back-btn" onClick={()=>setSelCat(null)}>← Back to Categories</button>
+                    <p className="section-title">{CAT_EMOJI[selectedCat]||CAT_EMOJI.default} {selectedCat}</p>
+                    <p className="section-sub">{meals.filter(m=>m.category===selectedCat).length} meals</p>
+                    <div className="cat-meal-list">
+                      {meals.filter(m=>m.category===selectedCat).map(m=>(
+                        <div key={m.id} className="cat-meal-item">
+                          <span style={{fontSize:20}}>{CAT_EMOJI[m.category]||CAT_EMOJI.default}</span>
+                          <div style={{flex:1}}>
+                            <div className="cat-meal-item-name">{m.name}</div>
+                            <div style={{fontSize:11,color:"var(--muted)",marginTop:2}}>{m.ingredients.join(" · ")}</div>
+                          </div>
+                          {m.favourite&&<span>⭐</span>}
+                          {m.lazy&&<span className="badge-lazy">😴</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Mobile bottom nav */}
+          <div className="mob-nav">
+            {NAV.map(t=>(
+              <button key={t.id} className={`mob-nav-btn ${tab===t.id?"active":""}`} onClick={()=>setTab(t.id)}>
+                <span className="ni">{t.icon}</span>{t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── PICKER SHEET ── */}
+      {picker&&(
+        <div className="overlay" onClick={()=>setPicker(null)}>
+          <div className="sheet" onClick={e=>e.stopPropagation()}>
+            <div className="handle"/>
+            <div className="sheet-title">Pick a meal · {picker.day} {picker.slot}
+              <span style={{fontSize:12,color:"var(--muted)",fontWeight:500,marginLeft:8}}>
+                ({pickerPool.length} suitable)
+              </span>
+            </div>
+            <div className="sheet-filters">
+              {[{id:"all",label:"All meals"},{id:"fav",label:"⭐ Favourites"},{id:"lazy",label:"😴 Easy"}].map(f=>(
+                <button key={f.id} className={`sf ${pFilter===f.id?"on":""}`} onClick={()=>setPFilter(f.id)}>{f.label}</button>
+              ))}
+            </div>
+            {pickerPool.length===0
+              ? <div style={{padding:"20px 16px",color:"var(--muted)",fontSize:14,fontStyle:"italic"}}>No meals here yet.</div>
+              : pickerPool.map(m=>(
+                  <div key={m.id} className="pick-item" onClick={()=>pickMeal(m.id)}>
+                    <span style={{fontSize:22}}>{CAT_EMOJI[m.category]||CAT_EMOJI.default}</span>
+                    <div style={{flex:1}}>
+                      <div className="pick-name">{m.name}</div>
+                      <div className="pick-cat">{m.category}{m.recipeUrl?" · 🔗 recipe":""}</div>
+                    </div>
+                    <div className="pick-badges">
+                      {m.favourite&&<span>⭐</span>}
+                      {m.lazy&&<span className="badge-lazy">😴</span>}
+                    </div>
+                  </div>
+                ))
+            }
+            <button className="sheet-clear" onClick={()=>{clearSlot(picker.day,picker.slot);setPicker(null);}}>Clear this slot</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── ADD MEAL FORM ── */}
+      {showAdd&&(
+        <div className="form-overlay">
+          <div className="form-sheet">
+            <div className="handle"/>
+            <div className="form-title">{editingMeal?"Edit Meal ✏️":"Add a New Meal 💕"}</div>
+            <div className="fg">
+              <label className="fl">Meal Name *</label>
+              <input className="fi" placeholder="e.g. Chicken Tikka Masala" value={nm.name} onChange={e=>setNm(n=>({...n,name:e.target.value}))}/>
+            </div>
+            <div className="fg">
+              <label className="fl">Category</label>
+              <input className="fi" placeholder="e.g. Curry, Pasta, Asian…" value={nm.category} onChange={e=>setNm(n=>({...n,category:e.target.value}))}/>
+            </div>
+            <div className="fg">
+              <label className="fl">Ingredients</label>
+              <input className="fi" placeholder="Chicken, Onion, Garlic, Spices…" value={nm.ingredients} onChange={e=>setNm(n=>({...n,ingredients:e.target.value}))}/>
+              <div className="fhint">Separate with commas</div>
+            </div>
+            <div className="fg">
+              <label className="fl">Recipe Link</label>
+              <input className="fi" placeholder="Paste a TikTok, YouTube or any URL…" value={nm.recipeUrl} onChange={e=>setNm(n=>({...n,recipeUrl:e.target.value}))}/>
+              <div className="fhint">TikTok, YouTube, a website — anything works</div>
+            </div>
+            <div className="fg">
+              <label className="fl">Notes</label>
+              <input className="fi" placeholder="e.g. Add extra chilli, use light coconut milk…" value={nm.notes} onChange={e=>setNm(n=>({...n,notes:e.target.value}))}/>
+            </div>
+              <div className="toggle-row">
+                <button className={`tog ${nm.favourite?"fav-on":""}`} onClick={()=>setNm(n=>({...n,favourite:!n.favourite}))}>⭐ Favourite</button>
+                <button className={`tog ${nm.lazy?"lazy-on":""}`} onClick={()=>setNm(n=>({...n,lazy:!n.lazy}))}>😴 Easy meal</button>
+              </div>
+            </div>
+            <div className="fg">
+              <label className="fl">Suitable for</label>
+              <div className="time-toggles">
+                {["Breakfast","Lunch","Dinner"].map(t=>{
+                  const on=nm.mealTimes.includes(t);
+                  return (
+                    <button key={t} className={`time-tog ${on?"on-"+t.toLowerCase():""}`} onClick={()=>{
+                      const next=on?nm.mealTimes.filter(x=>x!==t):[...nm.mealTimes,t];
+                      if(next.length===0)return;
+                      setNm(n=>({...n,mealTimes:next}));
+                    }}>
+                      {t==="Breakfast"?"🌅":t==="Lunch"?"☀️":"🌙"} {t}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="form-actions">
+              <button className="btn-sec" onClick={()=>{setShowAdd(false);setEditingMeal(null);setNm({name:"",category:"",ingredients:"",favourite:false,lazy:false,mealTimes:["Breakfast","Lunch","Dinner"],notes:"",recipeUrl:""});}}>Cancel</button>
+              <button className="btn-pri" onClick={addMeal}>{editingMeal?"Save Changes":"Save Meal"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+</script>
+<script>if("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");</script>
+</body>
+</html>
